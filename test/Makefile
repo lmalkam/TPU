@@ -3,11 +3,13 @@
 
 # defaults
 SIM ?= icarus
-FST ?= -fst # Use more efficient FST format
+# FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = project.v
-
+PROJECT_SOURCES = systolic_array.v
+TIMESTAMP = $(shell TZ=US/Eastern date +%Y%m%d_%H%M%S)
+WAVES_ROOT = $(PWD)
+COMPILE_ARGS += -DTIMESTAMP=\"$(TIMESTAMP)\"
 ifneq ($(GATES),yes)
 
 # RTL simulation:
@@ -34,6 +36,30 @@ endif
 # Allow sharing configuration between design and testbench via `include`:
 COMPILE_ARGS 		+= -I$(SRC_DIR)
 
+
+.PHONY: all test-systolic-array
+
+all:
+	$(MAKE) test-systolic-array
+
+
+
+test-systolic-array:
+	$(MAKE) clean
+	mkdir -p "$(WAVES_ROOT)/systolic_array/wave"
+	$(MAKE) sim \
+        TOPLEVEL=systolic_array_tb \
+        COCOTB_TEST_MODULES=test_systolic_array \
+        VERILOG_SOURCES="$(WAVES_ROOT)/systolic_array/systolic_array_tb.v $(SRC_DIR)/systolic_array.v $(SRC_DIR)/PE.v" \
+        PYTHONPATH=$(WAVES_ROOT)/systolic_array \
+        WAVES_DIR=$(WAVES_ROOT)/systolic_array/wave \
+        COMPILE_ARGS='$(COMPILE_ARGS) -DVCD_PATH="\"$(WAVES_ROOT)/systolic_array/wave/systolic_array_tb_$(TIMESTAMP).vcd\""'
+
+
+
+.PHONY: clean
+clean::
+	rm -rf sim_build* results.xml
 # Include the testbench sources:
 VERILOG_SOURCES += $(PWD)/tb.v
 TOPLEVEL = tb

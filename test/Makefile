@@ -6,7 +6,11 @@ SIM ?= icarus
 # FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = systolic_array.v
+PROJECT_SOURCES = systolic_array.v \
+                        control_unit.v \
+                        mmu_feeder.v \
+                        memory.v \
+                        tpu.v
 TIMESTAMP = $(shell TZ=US/Eastern date +%Y%m%d_%H%M%S)
 WAVES_ROOT = $(PWD)
 COMPILE_ARGS += -DTIMESTAMP=\"$(TIMESTAMP)\"
@@ -37,11 +41,14 @@ endif
 COMPILE_ARGS 		+= -I$(SRC_DIR)
 
 
-.PHONY: all test-systolic-array
+.PHONY: all test-systolic-array test-control-unit test-mmu-feeder test-memory test-tpu
 
 all:
 	$(MAKE) test-systolic-array
-
+	$(MAKE) test-control-unit
+	$(MAKE) test-mmu-feeder
+	$(MAKE) test-memory
+	$(MAKE) test-tpu
 
 
 test-systolic-array:
@@ -56,6 +63,49 @@ test-systolic-array:
         COMPILE_ARGS='$(COMPILE_ARGS) -DVCD_PATH="\"$(WAVES_ROOT)/systolic_array/wave/systolic_array_tb_$(TIMESTAMP).vcd\""'
 
 
+test-control-unit:
+	$(MAKE) clean
+	mkdir -p "$(WAVES_ROOT)/control_unit/wave"
+	$(MAKE) sim \
+		TOPLEVEL=control_unit_tb \
+		COCOTB_TEST_MODULES=test_control_unit \
+		VERILOG_SOURCES="$(WAVES_ROOT)/control_unit/control_unit_tb.v $(SRC_DIR)/control_unit.v" \
+		PYTHONPATH=$(WAVES_ROOT)/control_unit \
+		WAVES_DIR=$(WAVES_ROOT)/control_unit/wave \
+		COMPILE_ARGS='$(COMPILE_ARGS) -DVCD_PATH="\"$(WAVES_ROOT)/control_unit/wave/control_unit_tb_$(TIMESTAMP).vcd\""'
+
+test-mmu-feeder:
+	$(MAKE) clean
+	mkdir -p "$(WAVES_ROOT)/mmu_feeder/wave"
+	$(MAKE) sim \
+		TOPLEVEL=mmu_feeder_tb \
+		COCOTB_TEST_MODULES=test_mmu_feeder \
+		VERILOG_SOURCES="$(WAVES_ROOT)/mmu_feeder/mmu_feeder_tb.v $(SRC_DIR)/mmu_feeder.v" \
+		PYTHONPATH=$(WAVES_ROOT)/mmu_feeder \
+		WAVES_DIR=$(WAVES_ROOT)/mmu_feeder/wave \
+		COMPILE_ARGS='$(COMPILE_ARGS) -DVCD_PATH="\"$(WAVES_ROOT)/mmu_feeder/wave/mmu_feeder_tb_$(TIMESTAMP).vcd\""'
+
+test-memory:
+	$(MAKE) clean
+	mkdir -p "$(WAVES_ROOT)/memory/wave"
+	$(MAKE) sim \
+		TOPLEVEL=memory_tb \
+		COCOTB_TEST_MODULES=test_memory \
+		VERILOG_SOURCES="$(WAVES_ROOT)/memory/memory_tb.v $(SRC_DIR)/memory.v" \
+		PYTHONPATH=$(WAVES_ROOT)/memory \
+		WAVES_DIR=$(WAVES_ROOT)/memory/wave \
+		COMPILE_ARGS='$(COMPILE_ARGS) -DVCD_PATH="\"$(WAVES_ROOT)/memory/wave/memory_tb_$(TIMESTAMP).vcd\""'
+
+test-tpu:
+	$(MAKE) clean
+	mkdir -p "$(WAVES_ROOT)/tpu/wave"
+	$(MAKE) sim \
+		TOPLEVEL=tb \
+		COCOTB_TEST_MODULES=test_tpu \
+		VERILOG_SOURCES="$(WAVES_ROOT)/tpu/tpu_tb.v $(addprefix $(SRC_DIR)/,tpu.v delay_cell.v systolic_array.v pe.v mmu_feeder.v control_unit.v memory.v)" \
+		PYTHONPATH=$(WAVES_ROOT)/tpu \
+		WAVES_DIR=$(WAVES_ROOT)/tpu/wave \
+		COMPILE_ARGS='$(COMPILE_ARGS) -DVCD_PATH="\"$(WAVES_ROOT)/tpu/wave/tpu_tb_$(TIMESTAMP).vcd\""'
 
 .PHONY: clean
 clean::

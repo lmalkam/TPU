@@ -9,7 +9,9 @@ You can also include images in this folder and reference them in the markdown. E
 
 ## How it works
 
-Explain how your project works
+this is a tiny tapeout asic project a small 2*2 mat multiply tpu in verilog
+
+a host streams 8-bit signed matrix elements in. the chip stores two 2x2 matrices, multiplies them on a 2x2 systolic array 
 
 ## How to test
 
